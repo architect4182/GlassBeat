@@ -1,31 +1,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Song } from '../../../types/song';
-import { ScrubberBar } from './ScrubberBar';
-import { PlaybackControls } from './PlaybackControls';
 import { WaveformVisualizer } from './WaveformVisualizer';
 
 interface CenterPanelProps {
   track: Song;
   isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  onTogglePlay: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-  onSeek: (time: number) => void;
   analyserNode: AnalyserNode | null;
 }
 
 export const CenterPanel: React.FC<CenterPanelProps> = ({
   track,
   isPlaying,
-  currentTime,
-  duration,
-  onTogglePlay,
-  onNext,
-  onPrev,
-  onSeek,
   analyserNode
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -89,27 +75,6 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
           analyserNode={analyserNode} 
           isPlaying={isPlaying} 
           accentColor={track.theme.primary} 
-        />
-      </div>
-
-      {/* Enhanced Scrubber Bar */}
-      <div className="w-full max-w-xl mt-4">
-        <ScrubberBar 
-          currentTime={currentTime} 
-          duration={duration} 
-          onSeek={onSeek} 
-          primaryColor={track.theme.primary} 
-        />
-      </div>
-
-      {/* Playback Controls */}
-      <div className="mt-4">
-        <PlaybackControls 
-          isPlaying={isPlaying}
-          onTogglePlay={onTogglePlay}
-          onNext={onNext}
-          onPrev={onPrev}
-          primaryColor={track.theme.primary}
         />
       </div>
     </motion.div>
