@@ -81,9 +81,11 @@ export const MiniPlayerProgressBar: React.FC<MiniPlayerProgressBarProps> = ({
 
       {/* Scrubber Thumb (only visible on hover/drag) */}
       <motion.div
-        className="absolute top-1/2 w-3 h-3 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] -translate-y-1/2 pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity"
+        className="absolute top-1/2 w-3 h-3 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity origin-center"
         animate={{
-          left: `calc(${progress * 100}% - 6px)`,
+          left: `${progress * 100}%`,
+          y: '-50%',
+          x: '-50%',
           scale: isDragging ? 1.5 : 1,
           opacity: isDragging ? 1 : undefined,
         }}

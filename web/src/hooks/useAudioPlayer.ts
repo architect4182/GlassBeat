@@ -2,7 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Song } from '../types/song';
 
 export function useAudioPlayer(initialSongs: Song[]) {
-  const [currentSong, setCurrentSong] = useState<Song>(initialSongs[0]);
+  const [playlist, setPlaylist] = useState<Song[]>(initialSongs);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentSong = playlist[currentIndex];
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -21,7 +24,6 @@ export function useAudioPlayer(initialSongs: Song[]) {
       
       const ctx = new AudioContextClass();
       
-      // Resume if suspended (e.g., iOS)
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
@@ -36,9 +38,8 @@ export function useAudioPlayer(initialSongs: Song[]) {
       }
       
       const source = audioEl.__audioSourceNode;
-      source.disconnect(); // Ensure it's not connected to an old analyser
+      source.disconnect();
       source.connect(analyser);
-      analyser.connect(ctx.destination);
       analyser.connect(ctx.destination);
 
       audioContextRef.current = ctx;
@@ -48,7 +49,6 @@ export function useAudioPlayer(initialSongs: Song[]) {
     }
   }, []);
 
-  // Play/Pause
   const togglePlay = useCallback(() => {
     if (!audioRef.current) return;
     initAudio();
@@ -58,29 +58,34 @@ export function useAudioPlayer(initialSongs: Song[]) {
       audioRef.current.play().catch(console.error);
     }
     setIsPlaying(!isPlaying);
-  }, [isPlaying]);
+  }, [isPlaying, initAudio]);
 
-  // Track selection
   const playSong = useCallback((song: Song) => {
     initAudio();
-    setCurrentSong(song);
+    setPlaylist(prev => {
+      const idx = prev.findIndex(s => s.id === song.id);
+      if (idx !== -1) {
+        setCurrentIndex(idx);
+        return prev;
+      } else {
+        // Insert new song right after current song
+        const newPlaylist = [...prev];
+        newPlaylist.splice(currentIndex + 1, 0, song);
+        setCurrentIndex(currentIndex + 1);
+        return newPlaylist;
+      }
+    });
     setIsPlaying(true);
-  }, []);
+  }, [currentIndex, initAudio]);
 
-  // Next/Prev
   const nextSong = useCallback(() => {
-    const currentIndex = initialSongs.findIndex(s => s.id === currentSong.id);
-    const nextIndex = (currentIndex + 1) % initialSongs.length;
-    playSong(initialSongs[nextIndex]);
-  }, [currentSong.id, initialSongs, playSong]);
+    setCurrentIndex(prev => (prev + 1) % playlist.length);
+  }, [playlist.length]);
 
   const prevSong = useCallback(() => {
-    const currentIndex = initialSongs.findIndex(s => s.id === currentSong.id);
-    const prevIndex = (currentIndex - 1 + initialSongs.length) % initialSongs.length;
-    playSong(initialSongs[prevIndex]);
-  }, [currentSong.id, initialSongs, playSong]);
+    setCurrentIndex(prev => (prev - 1 + playlist.length) % playlist.length);
+  }, [playlist.length]);
 
-  // Seek
   const seek = useCallback((time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
@@ -88,7 +93,6 @@ export function useAudioPlayer(initialSongs: Song[]) {
     }
   }, []);
 
-  // Sync state with HTMLAudioElement
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
@@ -100,7 +104,6 @@ export function useAudioPlayer(initialSongs: Song[]) {
     }
   }, [currentSong, isPlaying, volume]);
 
-  // Audio Event Handlers
   const handleTimeUpdate = useCallback(() => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
@@ -117,6 +120,8 @@ export function useAudioPlayer(initialSongs: Song[]) {
   return {
     audioRef,
     currentSong,
+    playlist,
+    currentIndex,
     isPlaying,
     currentTime,
     duration,

@@ -33,7 +33,7 @@ export const MiniPlayerControls: React.FC<MiniPlayerControlsProps> = ({ isPlayin
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="w-10 h-10 rounded-full backdrop-blur-md bg-white/[0.12] border border-white/[0.2] flex items-center justify-center text-white hover:bg-white/[0.16] hover:border-white/[0.3] shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all cursor-pointer"
+        className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white hover:bg-white/[0.12] hover:border-white/[0.2] shadow-lg transition-all cursor-pointer"
       >
         {isPlaying ? (
           <Pause className="w-5 h-5" fill="currentColor" />
@@ -63,7 +63,7 @@ export const MiniPlayerControls: React.FC<MiniPlayerControlsProps> = ({ isPlayin
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="w-10 h-10 rounded-full backdrop-blur-md bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.1] hover:border-white/[0.2] transition-all cursor-pointer"
+        className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.15] transition-all cursor-pointer"
       >
         <ChevronUp className="w-6 h-6" />
       </motion.button>

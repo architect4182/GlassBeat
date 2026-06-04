@@ -1,82 +1,107 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Song } from '../../../types/song';
+import { Heart } from 'lucide-react';
 import { WaveformVisualizer } from './WaveformVisualizer';
 
 interface CenterPanelProps {
-  track: Song;
+  track: any;
   isPlaying: boolean;
   analyserNode: AnalyserNode | null;
 }
 
-export const CenterPanel: React.FC<CenterPanelProps> = ({
-  track,
-  isPlaying,
-  analyserNode
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
+export const CenterPanel: React.FC<CenterPanelProps> = ({ track, isPlaying, analyserNode }) => {
+  const [liked, setLiked] = useState(false);
 
   return (
     <motion.div
-      className="w-full flex flex-col items-center justify-start space-y-4"
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+      className="w-full flex flex-col items-center justify-center gap-6"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
-      {/* Album Artwork Container */}
-      <div
-        className="relative w-64 h-64 md:w-80 md:h-80 lg:w-[360px] lg:h-[360px] shrink-0"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      {/* Album Art + Ambient Waveform Container */}
+      <div className="relative flex items-center justify-center w-[300px] h-[300px] lg:w-[360px] lg:h-[360px] mb-4">
+        {/* Ambient radial waveform around art */}
+        <WaveformVisualizer
+          analyserNode={analyserNode}
+          isPlaying={isPlaying}
+          accentColor={track.theme.primary}
+        />
+
+        {/* Deep glow bloom behind art */}
+        <motion.div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 300,
+            height: 300,
+            background: `radial-gradient(circle, ${track.theme.primary}55 0%, ${track.theme.glow}22 50%, transparent 75%)`,
+            filter: 'blur(28px)',
+          }}
+          animate={{ scale: isPlaying ? [1, 1.08, 1] : 1, opacity: isPlaying ? [0.7, 1, 0.7] : 0.5 }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        {/* Album Art */}
         <AnimatePresence mode="wait">
           <motion.div
             key={track.id}
-            className="absolute inset-0 rounded-[2.5rem] overflow-hidden shadow-2xl"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, y: isHovered ? -12 : 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="relative z-10 rounded-[2rem] overflow-hidden shadow-2xl w-full h-full"
+            initial={{ opacity: 0, scale: 0.88 }}
+            animate={{ opacity: 1, scale: isPlaying ? 1.015 : 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Inner Album Art */}
-            <motion.img
-              layoutId={`album-${track.id}`}
+            <img
               src={track.cover}
               alt={track.title}
-              className="absolute inset-0 w-full h-full object-cover"
-              animate={{
-                scale: isHovered ? 1.05 : (isPlaying ? 1.02 : 1),
-              }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="w-full h-full object-cover"
+              style={{ display: 'block' }}
             />
-
-            {/* Reflection Glass Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.15] via-transparent to-transparent pointer-events-none mix-blend-overlay" />
+            {/* Specular highlight */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.15] pointer-events-none" />
+            {/* Subtle inner border */}
+            <div className="absolute inset-0 rounded-[2rem] ring-1 ring-white/[0.08] pointer-events-none" />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Track Info */}
+      {/* Track Info + Like */}
       <AnimatePresence mode="wait">
         <motion.div
           key={`info-${track.id}`}
-          className="text-center space-y-1 mt-4"
-          initial={{ opacity: 0, y: 10 }}
+          className="flex items-center gap-5 w-full max-w-md px-2"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.45 }}
         >
-          <h1 className="text-4xl font-bold text-white tracking-tight">{track.title}</h1>
-          <p className="text-xl text-white/60 font-medium tracking-wide">{track.artist}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[1.75rem] font-bold tracking-tight truncate leading-tight text-white">
+              {track.title}
+            </h1>
+            <p className="text-base text-white/60 font-medium mt-1 truncate tracking-wide">
+              {track.artist}
+            </p>
+          </div>
+
+          <motion.button
+            onClick={() => setLiked(v => !v)}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.88 }}
+            className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all"
+            style={{
+              background: liked ? `${track.theme.primary}22` : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${liked ? track.theme.primary + '55' : 'rgba(255,255,255,0.1)'}`,
+            }}
+          >
+            <Heart
+              className="w-5 h-5 transition-all"
+              style={{ color: liked ? track.theme.primary : 'rgba(255,255,255,0.4)' }}
+              fill={liked ? track.theme.primary : 'none'}
+            />
+          </motion.button>
         </motion.div>
       </AnimatePresence>
-
-      {/* Waveform Visualizer */}
-      <div className="w-full max-w-lg mt-2">
-        <WaveformVisualizer 
-          analyserNode={analyserNode} 
-          isPlaying={isPlaying} 
-          accentColor={track.theme.primary} 
-        />
-      </div>
     </motion.div>
   );
 };

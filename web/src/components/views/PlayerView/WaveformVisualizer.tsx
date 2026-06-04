@@ -6,118 +6,146 @@ interface WaveformVisualizerProps {
   accentColor: string;
 }
 
-export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ analyserNode, isPlaying, accentColor }) => {
+export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
+  analyserNode,
+  isPlaying,
+  accentColor,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const animRef = useRef<number | null>(null);
+  const smoothRef = useRef<Float32Array>(new Float32Array(128).fill(0));
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // High resolution for crisp rendering
-    const width = 600;
-    const height = 80;
-    const dpr = window.devicePixelRatio || 1;
-
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
+    const SIZE = 500;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    canvas.style.width = `${SIZE}px`;
+    canvas.style.height = `${SIZE}px`;
     ctx.scale(dpr, dpr);
 
-    const frequencies = new Uint8Array(256);
-    
-    // We want dense mirrored bars
-    const barCount = 48; // One side of the mirror
-    const totalBars = barCount * 2;
-    const barTotalSpace = width / totalBars;
-    const barWidth = barTotalSpace * 0.6;
-    const barGap = barTotalSpace * 0.4;
-    const centerY = height / 2;
+    const CX = SIZE / 2;
+    const CY = SIZE / 2;
+    const BASE_R = 168; // just outside album art radius
+    const MAX_SPIKE = 52;
+    const BARS = 128;
+    const freqData = new Uint8Array(analyserNode?.frequencyBinCount || 256);
 
-    const smoothedValues = new Array(barCount).fill(0);
+    // Parse accent color to rgb
+    const hexToRgb = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return { r, g, b };
+    };
+    const rgb = hexToRgb(accentColor.startsWith('#') ? accentColor : '#D4B483');
 
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
+    let idlePhase = 0;
 
-      if (!analyserNode) {
-        if (isPlaying) {
-          animationFrameRef.current = requestAnimationFrame(render);
-        }
-        return;
+    const draw = () => {
+      ctx.clearRect(0, 0, SIZE, SIZE);
+
+      if (analyserNode) {
+        analyserNode.getByteFrequencyData(freqData);
       }
 
-      analyserNode.getByteFrequencyData(frequencies);
+      idlePhase += isPlaying ? 0.015 : 0.008;
 
-      for (let i = 0; i < barCount; i++) {
-        // Map 48 bars to the lower/mid frequencies
-        const freqIndex = Math.floor((i / barCount) * 100);
-        const value = frequencies[freqIndex] / 255;
-        
-        // High smoothing factor
-        if (value > smoothedValues[i]) {
-          smoothedValues[i] = value * 0.5 + smoothedValues[i] * 0.5;
+      for (let i = 0; i < BARS; i++) {
+        let target = 0;
+
+        if (analyserNode && isPlaying) {
+          const idx = Math.floor((i / BARS) * (freqData.length * 0.75));
+          target = freqData[idx] / 255;
         } else {
-          smoothedValues[i] = smoothedValues[i] * 0.85;
+          // Idle breathing wave
+          const wave1 = Math.sin(idlePhase + (i / BARS) * Math.PI * 4) * 0.12;
+          const wave2 = Math.sin(idlePhase * 0.7 + (i / BARS) * Math.PI * 6) * 0.06;
+          target = Math.max(0, 0.04 + wave1 + wave2);
         }
 
-        const smoothedValue = smoothedValues[i];
-        
-        // Base height 4px
-        const barHeight = Math.max(4, smoothedValue * (height - 10));
-
-        // Draw Right Side
-        const xRight = (width / 2) + (i * (barWidth + barGap)) + (barGap / 2);
-        
-        // Draw Left Side (mirrored index)
-        const xLeft = (width / 2) - ((i + 1) * (barWidth + barGap)) + (barGap / 2);
-
-        ctx.fillStyle = accentColor;
-        ctx.shadowColor = accentColor;
-        ctx.shadowBlur = 10 * smoothedValue;
-        
-        const radius = Math.min(barWidth / 2, barHeight / 2);
-
-        // Right bar
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(xRight, centerY - barHeight / 2, barWidth, barHeight, radius);
-        } else {
-          ctx.rect(xRight, centerY - barHeight / 2, barWidth, barHeight);
-        }
-        ctx.fill();
-
-        // Left bar
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(xLeft, centerY - barHeight / 2, barWidth, barHeight, radius);
-        } else {
-          ctx.rect(xLeft, centerY - barHeight / 2, barWidth, barHeight);
-        }
-        ctx.fill();
+        // Smooth
+        const prev = smoothRef.current[i];
+        smoothRef.current[i] = target > prev
+          ? prev * 0.4 + target * 0.6
+          : prev * 0.82 + target * 0.18;
       }
 
-      animationFrameRef.current = requestAnimationFrame(render);
+      // Draw outer glow ring first (soft halo)
+      const glowGradient = ctx.createRadialGradient(CX, CY, BASE_R - 10, CX, CY, BASE_R + MAX_SPIKE + 30);
+      glowGradient.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`);
+      glowGradient.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+      ctx.beginPath();
+      ctx.arc(CX, CY, BASE_R + MAX_SPIKE + 30, 0, Math.PI * 2);
+      ctx.arc(CX, CY, BASE_R - 10, 0, Math.PI * 2, true);
+      ctx.fillStyle = glowGradient;
+      ctx.fill();
+
+      // Draw each bar as a radial spike
+      for (let i = 0; i < BARS; i++) {
+        const angle = (i / BARS) * Math.PI * 2 - Math.PI / 2;
+        const val = smoothRef.current[i];
+        const spikeLen = val * MAX_SPIKE;
+
+        const innerR = BASE_R;
+        const outerR = BASE_R + Math.max(2, spikeLen);
+
+        const x1 = CX + Math.cos(angle) * innerR;
+        const y1 = CY + Math.sin(angle) * innerR;
+        const x2 = CX + Math.cos(angle) * outerR;
+        const y2 = CY + Math.sin(angle) * outerR;
+
+        const alpha = 0.35 + val * 0.65;
+        const lineWidth = 2.2 + val * 2.8;
+
+        // Draw glow layer
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha * 0.4})`;
+        ctx.lineWidth = lineWidth + 4;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.9)`;
+        ctx.shadowBlur = 12 * val;
+        ctx.stroke();
+
+        // Draw sharp inner line
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
+        ctx.lineWidth = lineWidth;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
+
+      // Thin base circle ring
+      ctx.beginPath();
+      ctx.arc(CX, CY, BASE_R, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`;
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+
+      animRef.current = requestAnimationFrame(draw);
     };
 
-    if (isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(render);
-    } else {
-      render(); // Draw initial/paused frame
-    }
-
+    animRef.current = requestAnimationFrame(draw);
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [analyserNode, isPlaying, accentColor]);
 
   return (
-    <div className="w-full flex justify-center py-2">
-      <canvas ref={canvasRef} className="block" />
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ width: '500px', height: '500px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+    />
   );
 };

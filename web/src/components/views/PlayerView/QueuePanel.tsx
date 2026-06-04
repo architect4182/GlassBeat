@@ -1,18 +1,18 @@
 import { motion } from 'framer-motion';
 import { X, Play } from 'lucide-react';
 import { cn } from '../../../utils/cn';
-import { songs } from '../../../data/songs';
 import type { Song } from '../../../types/song';
 import { Visualizer } from '../../Visualizer/Visualizer';
 
 export const QueuePanel: React.FC<{
   currentTrack: Song;
+  playlist?: Song[];
+  currentIndex?: number;
   onClose: () => void;
   onTrackClick?: (song: Song) => void;
-}> = ({ currentTrack, onClose, onTrackClick }) => {
+}> = ({ currentTrack, playlist = [], currentIndex = 0, onClose, onTrackClick }) => {
   
-  const currentIndex = songs.findIndex(s => s.id === currentTrack.id);
-  const queue = [...songs.slice(currentIndex + 1), ...songs.slice(0, currentIndex)].slice(0, 10);
+  const queue = playlist.slice(currentIndex + 1, currentIndex + 11);
 
   return (
     <>

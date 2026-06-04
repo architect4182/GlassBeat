@@ -41,12 +41,10 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({ audio, onExpand, isVisib
         <motion.div
           className="absolute inset-0 rounded-3xl"
           style={{
-            background: `radial-gradient(
-              circle at 30% 30%,
-              ${albumColor}30 0%,
-              ${albumColor}10 60%,
-              rgba(255,255,255,0.05) 100%
-            )`,
+            background: `
+              radial-gradient(circle at 30% 30%, ${albumColor}40 0%, transparent 80%),
+              rgba(15, 15, 20, 0.75)
+            `,
             backdropFilter: "blur(32px)",
             WebkitBackdropFilter: "blur(32px)",
           }}
