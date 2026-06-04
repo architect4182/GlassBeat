@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { X, Play } from 'lucide-react';
-import { cn } from '../../../utils/cn';
 import type { Song } from '../../../types/song';
 import { Visualizer } from '../../Visualizer/Visualizer';
 

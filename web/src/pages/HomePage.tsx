@@ -1,4 +1,5 @@
-import { useState, MouseEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { songs } from '../data/songs';

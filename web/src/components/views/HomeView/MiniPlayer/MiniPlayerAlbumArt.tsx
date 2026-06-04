@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { Song } from '../../../../../types/song';
+import type { Song } from '../../../../types/song';
 
 interface MiniPlayerAlbumArtProps {
   track: Song;

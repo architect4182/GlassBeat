@@ -34,7 +34,7 @@ export function useAudioPlayer(initialSongs: Song[]) {
 
       const audioEl = audioRef.current as any;
       if (!audioEl.__audioSourceNode) {
-        audioEl.__audioSourceNode = ctx.createMediaElementAudioSource(audioEl);
+        audioEl.__audioSourceNode = ctx.createMediaElementSource(audioEl);
       }
       
       const source = audioEl.__audioSourceNode;

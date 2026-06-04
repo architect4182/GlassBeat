@@ -127,7 +127,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ audio, onTrackClick, onSearc
         <TopBar className="hidden md:flex sticky top-0 z-40 bg-transparent backdrop-blur-none border-none" />
 
         {/* Content Sections: Single Flowing Layout */}
-        <div className="px-10 py-12 flex flex-col gap-16 pb-40 w-full">
+        <div className="px-4 md:px-10 py-6 md:py-12 flex flex-col gap-10 md:gap-16 pb-40 w-full">
 
           {/* RECENTLY PLAYED */}
           <RecentlyPlayedSection onTrackClick={onTrackClick} />

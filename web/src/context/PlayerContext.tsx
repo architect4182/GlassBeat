@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Song } from '../types/song';
+import { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { Song } from '../types/song';
 import { songs } from '../data/songs';
 
 // Re-export Song as Track alias so existing consumers keep working

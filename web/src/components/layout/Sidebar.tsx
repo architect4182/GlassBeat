@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { Home, Library, Heart, Clock, Search, User, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
