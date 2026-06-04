@@ -1,20 +1,12 @@
-# dependencies
 node_modules/
 web/node_modules/
 
-# build
 dist/
 build/
 
-# env
 .env
 .env.local
 
-# logs
-*.log
-
-# vscode
 .vscode/
 
-# mac
-.DS_Store
+*.log
